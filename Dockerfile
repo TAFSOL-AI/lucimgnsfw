@@ -1,27 +1,22 @@
-# Use an official Python runtime as a parent image
-FROM python:3.10
+FROM python:3.9-slim
 
-# Set the working directory
+# Set working directory
 WORKDIR /app
 
-# Install system dependencies required for OpenCV
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     libgl1-mesa-glx \
-    libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy the requirements file
-COPY requirements.txt .
+# Copy requirements and install dependencies
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Install dependencies, including python-multipart
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
-
-# Copy the application code
+# Copy application files
 COPY . .
 
-# Expose the application's port
+# Expose FastAPI default port
 EXPOSE 8000
 
-# Run the FastAPI app using uvicorn
+# Command to run the application
 CMD ["uvicorn", "luc:app", "--host", "0.0.0.0", "--port", "8000"]
