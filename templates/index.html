@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NSFW Content Detector</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3f37c9;
+            --accent-color: #4895ef;
+            --light-color: #f8f9fa;
+            --dark-color: #212529;
+            --success-color: #4bb543;
+            --danger-color: #d9534f;
+            --warning-color: #ffc107;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f5f7fa;
+            color: var(--dark-color);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 2rem 0;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .card h2 {
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+            position: relative;
+            padding-bottom: 0.5rem;
+        }
+        
+        .card h2::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 50px;
+            height: 3px;
+            background: var(--accent-color);
+        }
+        
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 3rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 2rem;
+        }
+        
+        .upload-area:hover {
+            border-color: var(--accent-color);
+            background: rgba(72, 149, 239, 0.05);
+        }
+        
+        .upload-area.active {
+            border-color: var(--primary-color);
+            background: rgba(67, 97, 238, 0.1);
+        }
+        
+        .upload-icon {
+            font-size: 3rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+        
+        .btn {
+            display: inline-block;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.8rem 2rem;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        
+        .btn:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--primary-color);
+            color: var(--primary-color);
+        }
+        
+        .btn-outline:hover {
+            background: rgba(67, 97, 238, 0.1);
+        }
+        
+        .result-container {
+            display: none;
+            margin-top: 2rem;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .result-card {
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .result-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .result-icon {
+            font-size: 2rem;
+            margin-right: 1rem;
+        }
+        
+        .safe .result-icon {
+            color: var(--success-color);
+        }
+        
+        .nsfw .result-icon {
+            color: var(--danger-color);
+        }
+        
+        .result-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+        
+        .result-details {
+            margin-top: 1rem;
+        }
+        
+        .detail-row {
+            display: flex;
+            margin-bottom: 0.5rem;
+        }
+        
+        .detail-label {
+            font-weight: 500;
+            width: 150px;
+            color: #666;
+        }
+        
+        .detail-value {
+            flex: 1;
+        }
+        
+        .confidence-meter {
+            height: 10px;
+            background: #e9ecef;
+            border-radius: 5px;
+            margin-top: 0.5rem;
+            overflow: hidden;
+        }
+        
+        .confidence-level {
+            height: 100%;
+            background: var(--success-color);
+            transition: width 0.5s ease;
+        }
+        
+        .nsfw .confidence-level {
+            background: var(--danger-color);
+        }
+        
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            margin: 2rem 0;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(67, 97, 238, 0.2);
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        .video-frames {
+            margin-top: 2rem;
+        }
+        
+        .frame-result {
+            display: flex;
+            align-items: center;
+            padding: 0.8rem;
+            border-radius: 5px;
+            margin-bottom: 0.5rem;
+            background: #f8f9fa;
+        }
+        
+        .frame-result.nsfw {
+            background: rgba(217, 83, 79, 0.1);
+        }
+        
+        .frame-number {
+            font-weight: 500;
+            width: 60px;
+        }
+        
+        .frame-status {
+            flex: 1;
+        }
+        
+        .frame-confidence {
+            width: 100px;
+            text-align: right;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        .badge-safe {
+            background: rgba(75, 181, 67, 0.2);
+            color: var(--success-color);
+        }
+        
+        .badge-nsfw {
+            background: rgba(217, 83, 79, 0.2);
+            color: var(--danger-color);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 3rem;
+            padding: 1rem 0;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            header h1 {
+                font-size: 2rem;
+            }
+            
+            .card {
+                padding: 1.5rem;
+            }
+            
+            .upload-area {
+                padding: 2rem 1rem;
+            }
+            
+            .detail-row {
+                flex-direction: column;
+            }
+            
+            .detail-label {
+                width: 100%;
+                margin-bottom: 0.25rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-shield-alt"></i> NSFW Content Detector</h1>
+            <p>Upload images or videos to detect inappropriate content</p>
+        </header>
+        
+        <div class="card">
+            <h2>Upload Media</h2>
+            
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                </div>
+                <h3>Drag & Drop your file here</h3>
+                <p>or click to browse files (supports JPG, PNG, WEBP, MP4, etc.)</p>
+                <input type="file" id="fileInput" accept="image/*,video/*" style="display: none;">
+                <button class="btn" id="browseBtn" style="margin-top: 1rem;">
+                    <i class="fas fa-folder-open"></i> Browse Files
+                </button>
+            </div>
+            
+            <div class="loading-spinner" id="loadingSpinner">
+                <div class="spinner"></div>
+                <p>Analyzing content... Please wait</p>
+            </div>
+            
+            <div class="result-container" id="resultContainer">
+                <div class="result-card" id="resultCard">
+                    <div class="result-header">
+                        <div class="result-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="result-title" id="resultTitle">Content is Safe</div>
+                    </div>
+                    
+                    <div class="result-details">
+                        <div class="detail-row">
+                            <div class="detail-label">Filename:</div>
+                            <div class="detail-value" id="filename">example.jpg</div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">File Type:</div>
+                            <div class="detail-value" id="fileType">image</div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Classification:</div>
+                            <div class="detail-value">
+                                <span class="badge badge-safe" id="classificationBadge">SFW</span>
+                            </div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Confidence:</div>
+                            <div class="detail-value" id="confidenceValue">95%</div>
+                        </div>
+                        <div class="confidence-meter">
+                            <div class="confidence-level" id="confidenceLevel" style="width: 95%"></div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Processing Time:</div>
+                            <div class="detail-value" id="processingTime">0.45 seconds</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="video-frames" id="videoFramesContainer" style="display: none;">
+                    <h3>Frame Analysis</h3>
+                    <div id="frameResults"></div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>© 2023 NSFW Content Detector | Powered by AI</p>
+        </footer>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('fileInput');
+            const browseBtn = document.getElementById('browseBtn');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            const resultContainer = document.getElementById('resultContainer');
+            const resultCard = document.getElementById('resultCard');
+            const resultTitle = document.getElementById('resultTitle');
+            const filenameElement = document.getElementById('filename');
+            const fileTypeElement = document.getElementById('fileType');
+            const classificationBadge = document.getElementById('classificationBadge');
+            const confidenceValue = document.getElementById('confidenceValue');
+            const confidenceLevel = document.getElementById('confidenceLevel');
+            const processingTime = document.getElementById('processingTime');
+            const videoFramesContainer = document.getElementById('videoFramesContainer');
+            const frameResults = document.getElementById('frameResults');
+            
+            // Drag and drop functionality
+            uploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                uploadArea.classList.add('active');
+            });
+            
+            uploadArea.addEventListener('dragleave', function() {
+                uploadArea.classList.remove('active');
+            });
+            
+            uploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                uploadArea.classList.remove('active');
+                
+                if (e.dataTransfer.files.length) {
+                    fileInput.files = e.dataTransfer.files;
+                    handleFileUpload();
+                }
+            });
+            
+            // Browse button click
+            browseBtn.addEventListener('click', function() {
+                fileInput.click();
+            });
+            
+            // File input change
+            fileInput.addEventListener('change', handleFileUpload);
+            
+            function handleFileUpload() {
+                if (!fileInput.files.length) return;
+                
+                const file = fileInput.files[0];
+                
+                // Show loading spinner
+                loadingSpinner.style.display = 'block';
+                resultContainer.style.display = 'none';
+                
+                // Create FormData and send to server
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                fetch('/api/classify/', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => {
+                            throw new Error(err.detail || 'Failed to analyze file');
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.status === 'success') {
+                        displayResults(data);
+                    } else {
+                        throw new Error(data.message || 'Analysis failed');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error: ' + error.message);
+                })
+                .finally(() => {
+                    loadingSpinner.style.display = 'none';
+                });
+            }
+            
+            function displayResults(data) {
+                // Debug the API response
+                console.log("API Response:", JSON.stringify(data, null, 2));
+                
+                // Get final classification - prioritize video final_classification if available
+                const classification = data.final_classification || data.classification || "SFW";
+                const isNSFW = classification.toLowerCase() === "nsfw";
+                
+                // Get confidence - use max confidence for NSFW cases
+                let confidence = isNSFW ? 
+                    (data.confidence || data.details?.max_nsfw_confidence || 0.95) : 
+                    (data.confidence || 0);
+                
+                // Convert to percentage
+                confidence = Math.round(confidence * 100);
+                
+                // Update UI
+                filenameElement.textContent = data.filename;
+                fileTypeElement.textContent = data.file_type || "unknown";
+                processingTime.textContent = data.processing_time || data.total_processing_time || "N/A";
+                
+                // Set classification display
+                if (isNSFW) {
+                    resultCard.classList.add('nsfw');
+                    resultCard.classList.remove('safe');
+                    resultTitle.innerHTML = '<i class="fas fa-exclamation-triangle"></i> NSFW Content Detected!';
+                    classificationBadge.textContent = 'NSFW';
+                    classificationBadge.className = 'badge badge-nsfw';
+                } else {
+                    resultCard.classList.add('safe');
+                    resultCard.classList.remove('nsfw');
+                    resultTitle.innerHTML = '<i class="fas fa-check-circle"></i> Content is Safe';
+                    classificationBadge.textContent = 'SFW';
+                    classificationBadge.className = 'badge badge-safe';
+                }
+                
+                // Set confidence
+                confidenceValue.textContent = `${confidence}%`;
+                confidenceLevel.style.width = `${confidence}%`;
+                
+                // Handle video frames if present
+                if (data.frame_classifications || data.frame_results) {
+                    const frames = data.frame_classifications || data.frame_results || [];
+                    videoFramesContainer.style.display = 'block';
+                    frameResults.innerHTML = '';
+                    
+                    frames.slice(0, 5).forEach(frame => {
+                        const frameIsNSFW = frame.classification.toLowerCase() === "nsfw" || 
+                                        (frame.probabilities?.nsfw || 0) > 0.7;
+                        const frameConfidence = frameIsNSFW ? 
+                            Math.round((frame.confidence || frame.probabilities?.nsfw || 0.95) * 100) : 
+                            Math.round((frame.confidence || 0) * 100);
+                        
+                        const frameElement = document.createElement('div');
+                        frameElement.className = `frame-result ${frameIsNSFW ? 'nsfw' : ''}`;
+                        frameElement.innerHTML = `
+                            <div class="frame-number">Frame ${frame.frame}</div>
+                            <div class="frame-status">
+                                <span class="badge ${frameIsNSFW ? 'badge-nsfw' : 'badge-safe'}">
+                                    ${frameIsNSFW ? 'NSFW' : 'SFW'}
+                                </span>
+                            </div>
+                            <div class="frame-confidence">${frameConfidence}%</div>
+                        `;
+                        frameResults.appendChild(frameElement);
+                    });
+                    
+                    // Add NSFW frame count info
+                    if (data.nsfw_frame_count > 0) {
+                        const countElement = document.createElement('div');
+                        countElement.style.marginTop = '1rem';
+                        countElement.style.fontWeight = '500';
+                        countElement.textContent = `Detected ${data.nsfw_frame_count} NSFW frames out of ${data.total_frames}`;
+                        frameResults.appendChild(countElement);
+                    }
+                } else {
+                    videoFramesContainer.style.display = 'none';
+                }
+                
+                resultContainer.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
