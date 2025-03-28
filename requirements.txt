@@ -1,0 +1,6 @@
+torch
+opencv-python
+fastapi
+pillow
+transformers
+numpy
