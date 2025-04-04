@@ -5,7 +5,7 @@ import shutil
 import tempfile
 import time
 from fastapi import FastAPI, File, UploadFile, HTTPException, Request
-from fastapi.staticfiles import StaticFiles
+# from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, JSONResponse
 from PIL import Image, ImageFile, UnidentifiedImageError
@@ -20,7 +20,7 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 app = FastAPI()
 
 # Mount static files
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 # Load NSFW Model - Using a more robust model
