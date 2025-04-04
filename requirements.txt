@@ -5,3 +5,4 @@ pillow
 transformers
 numpy
 uvicorn
+python-multipart
